@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>资金流动管理系统</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- 引入依赖 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>资金流动管理系统</h1>
+
+      <!-- 登录/注册模块 -->
+      <div v-if="!isLogin" class="form-box">
+        <h3>{{ isRegister ? '用户注册' : '用户登录' }}</h3>
+        <input v-model="form.username" placeholder="请输入用户名" />
+        <input v-model="form.password" type="password" placeholder="请输入密码" />
+        <input v-if="isRegister" v-model="form.email" placeholder="请输入邮箱" />
+        <button class="primary-btn" @click="isRegister ? register() : login()">
+          {{ isRegister ? '立即注册' : '立即登录' }}
+        </button>
+        <p class="toggle-text" @click="isRegister = !isRegister">
+          {{ isRegister ? '已有账号？去登录' : '没有账号？去注册' }}
+        </p>
+      </div>
+
+      <!-- 登录后主界面 -->
+      <div v-else>
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+          <button @click="changeTab('home')" :class="{active: tab==='home'}">首页</button>
+          <button @click="changeTab('record')" :class="{active: tab==='record'}">记账</button>
+          <button @click="changeTab('statistic')" :class="{active: tab==='statistic'}">统计报表</button>
+          <button @click="changeTab('budget')" :class="{active: tab==='budget'}">预算管理</button>
+          <button class="logout-btn" @click="logout">退出登录</button>
+        </div>
+
+        <!-- 首页/概览页 -->
+        <div v-if="tab==='home'" class="card">
+          <h3>本月财务概览</h3>
+          <div class="overview-grid">
+            <div class="overview-item income">
+              <p>本月收入</p>
+              <h2>¥ {{ totalIncome }}</h2>
+            </div>
+            <div class="overview-item expense">
+              <p>本月支出</p>
+              <h2>¥ {{ totalExpense }}</h2>
+            </div>
+            <div class="overview-item balance">
+              <p>本月结余</p>
+              <h2>¥ {{ totalIncome - totalExpense }}</h2>
+            </div>
+          </div>
+          <div class="recent-list">
+            <h4>最近流水</h4>
+            <div v-for="item in recentRecords" :key="item.id" class="record-item">
+              <div>
+                <span class="category-tag">{{ item.category }}</span>
+                <span class="date-text">{{ item.date }}</span>
+              </div>
+              <span :class="item.type==='income'?'income-text':'expense-text'">
+                {{ item.type==='income'?'+':'-' }} ¥ {{ item.amount }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 记账/流水管理页 -->
+        <div v-if="tab==='record'" class="card">
+          <h3>新增收支记录</h3>
+          <div class="form-grid">
+            <select v-model="recordForm.type">
+              <option value="income">收入</option>
+              <option value="expense">支出</option>
+            </select>
+            <input v-model.number="recordForm.amount" type="number" placeholder="请输入金额" />
+            <select v-model="recordForm.category">
+              <option v-if="recordForm.type==='income'">工资</option>
+              <option v-if="recordForm.type==='income'">奖金</option>
+              <option v-if="recordForm.type==='income'">兼职</option>
+              <option v-if="recordForm.type==='income'">其他收入</option>
+              <option v-if="recordForm.type==='expense'">餐饮</option>
+              <option v-if="recordForm.type==='expense'">交通</option>
+              <option v-if="recordForm.type==='expense'">购物</option>
+              <option v-if="recordForm.type==='expense'">住房</option>
+              <option v-if="recordForm.type==='expense'">娱乐</option>
+              <option v-if="recordForm.type==='expense'">其他支出</option>
+            </select>
+            <input v-model="recordForm.date" type="date" />
+            <input v-model="recordForm.note" placeholder="备注（选填）" class="full-width" />
+          </div>
+          <button class="primary-btn save-btn" @click="addRecord">保存记录</button>
+
+          <h3 class="list-title">流水记录列表</h3>
+          <div class="table-header">
+            <span>日期</span>
+            <span>类型</span>
+            <span>分类</span>
+            <span>金额</span>
+            <span>备注</span>
+            <span>操作</span>
+          </div>
+          <div v-for="item in recordList" :key="item.id" class="table-row">
+            <span>{{ item.date }}</span>
+            <span :class="item.type==='income'?'income-text':'expense-text'">
+              {{ item.type==='income'?'收入':'支出' }}
+            </span>
+            <span>{{ item.category }}</span>
+            <span>¥ {{ item.amount }}</span>
+            <span>{{ item.note || '-' }}</span>
+            <button class="del-btn" @click="deleteRecord(item.id)">删除</button>
+          </div>
+        </div>
+
+        <!-- 统计报表页 -->
+        <div v-if="tab==='statistic'" class="card">
+          <h3>支出分类占比</h3>
+          <div id="categoryPie" class="chart-box"></div>
+          <h3>月度收支趋势</h3>
+          <div id="monthLine" class="chart-box"></div>
+        </div>
+
+        <!-- 预算管理页 -->
+        <div v-if="tab==='budget'" class="card">
+          <h3>月度预算设置</h3>
+          <div class="budget-form">
+            <select v-model="budgetForm.category">
+              <option>餐饮</option>
+              <option>交通</option>
+              <option>购物</option>
+              <option>住房</option>
+              <option>娱乐</option>
+              <option>全部分类</option>
+            </select>
+            <input v-model.number="budgetForm.monthLimit" type="number" placeholder="月度限额" />
+            <input v-model="budgetForm.month" type="month" />
+          </div>
+          <button class="primary-btn" @click="setBudget">保存预算</button>
+
+          <div v-if="budgetLimit>0" class="budget-progress">
+            <h4>本月{{ budgetForm.category }}预算：¥ {{ budgetLimit }}</h4>
+            <p>已支出：¥ {{ categoryExpense }}</p>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{width: budgetPercent+'%', backgroundColor: budgetPercent>100?'#f53f3f':'#00b42a'}"></div>
+            </div>
+            <p v-if="budgetPercent>100" class="warn-text">⚠️ 已超出预算！</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
