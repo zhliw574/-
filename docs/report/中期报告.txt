@@ -1,0 +1,156 @@
+                                                                                                 资金流动管理系统 – 中期进展报告
+
+
+项目名称	资金流动管理系统
+小组序号	23
+指导老师	尹兆远
+组长 	张力文
+成员	       张力文、史俊龙、王宋、何蕴豪
+报告日期	2026年5月8日
+一、当前总体进展
+截至本报告提交日：
+
+✅ 数据库设计：已完成并部署（王宋）
+		
+
+✅ 前端开发：核心页面已完成（史俊龙）
+
+
+⏳ 后端开发：框架搭建中，业务接口开发中（张力文）
+
+⏳ 测试与报告：测试用例设计中（何蕴豪）
+
+模块	  负责人	  进度	     说明	
+数据库	王宋	100%	  表结构、CRUD模板、部署完成	
+前端	史俊龙	80%	   Vue页面完成，等待后端接口	
+后端	张力文	40%	框架搭建，核心接口开发中	
+测试与报告	何蕴豪	40%	  测试用例编写中，报告框架完成	
+总体项目完成度：约 55%
+     
+二、系统设计
+2.1 系统总体架构
+采用 B/S架构，前后端分离模式。
+
+层级	技术	职责
+表现层	Vue.js + HTML/CSS + ECharts	用户界面交互、数据可视化
+业务逻辑层	Python Flask	处理请求、业务规则、数据校验
+数据访问层	SQLAlchemy / pymysql	数据库操作
+数据层	MySQL	数据存储与管理
+2.2 系统功能模块
+
+资金流动管理系统
+├── 用户模块
+│   ├── 用户注册
+│   ├── 用户登录
+│   └── 用户信息管理
+├── 记账模块
+│   ├── 添加收入/支出
+│   ├── 编辑流水记录
+│   ├── 删除流水记录
+│   └── 流水列表查询
+├── 统计模块
+│   ├── 月度收支汇总
+│   ├── 分类支出占比
+│   └── 可视化图表（饼图/折线图）
+├── 预算模块
+│   ├── 预算设置
+│   └── 超额提醒
+└── 管理模块
+    └── 管理员查看所有用户流水
+
+2.3 前后端接口设计（API）
+前后端约定 RESTful 风格 API，数据交换格式为 JSON。
+
+功能	方法	URL	请求体示例	响应示例
+用户注册	POST	/api/register	{"username":"zhang","password":"123","email":"a@b.com"}	{"code":200,"message":"注册成功"}
+用户登录	POST	/api/login	{"username":"zhang","password":"123"}	{"code":200,"token":"xxx","user_id":1}
+添加流水	POST	/api/transactions	{"type":"支出","category":"餐饮","amount":45.5,"date":"2025-04-15"}	{"code":200,"trans_id":101}
+获取流水列表	GET	/api/transactions	?user_id=1	{"code":200,"data":[...]}
+编辑流水	PUT	/api/transactions/<id>	{"amount":50.0}	{"code":200,"message":"更新成功"}
+删除流水	DELETE	/api/transactions/<id>	—	{"code":200,"message":"删除成功"}
+月度报表	GET	/api/report/monthly	?year=2025&month=4&user_id=1	{"total_income":8000,"total_expense":3200,"balance":4800}
+分类统计	GET	/api/stat/category	?type=支出&year=2025&month=4&user_id=1	[{"name":"餐饮","value":1200},{"name":"交通","value":300}]
+设置预算	POST	/api/budget	{"category":"餐饮","month":"2025-04","limit":2000}	{"code":200,"message":"预算设置成功"}
+2.4 系统安全设计
+安全项	实现方式
+密码加密	bcrypt 哈希存储
+SQL注入防护	参数化查询 / ORM
+会话管理	JWT Token
+跨域处理	Flask-CORS 配置
+三、数据库设计
+3.1 数据库概述
+数据库名称：fund_management
+
+字符集：utf8mb4
+
+存储引擎：InnoDB
+
+3.2 表结构设计
+（1）用户表（user）
+字段名	类型	约束	说明
+user_id	INT	PRIMARY KEY AUTO_INCREMENT	用户唯一标识
+username	VARCHAR(32)	NOT NULL UNIQUE	用户名
+password	VARCHAR(64)	NOT NULL	加密后的密码
+email	VARCHAR(64)		邮箱
+income_total	DECIMAL(10,2)	DEFAULT 0	累计总收入
+budget_food	DECIMAL(10,2)	DEFAULT 0	餐饮类预算
+budget_non_food	DECIMAL(10,2)	DEFAULT 0	非餐饮类预算
+
+（2）资金流水表（transaction）
+字段名	类型	约束	说明
+trans_id	INT	PRIMARY KEY AUTO_INCREMENT	流水唯一标识
+user_id	INT	NOT NULL FOREIGN KEY	所属用户
+trans_type	ENUM('收入','支出')	NOT NULL	交易类型
+amount	DECIMAL(10,2)	NOT NULL	金额
+category	VARCHAR(32)	NOT NULL	分类
+trans_date	DATE	NOT NULL	交易日期
+remark	VARCHAR(255)
+
+（3）管理员表（admin）
+字段名	类型	约束	说明
+admin_id	INT	PRIMARY KEY AUTO_INCREMENT	管理员唯一标识
+admin_name	VARCHAR(32)	NOT NULL UNIQUE	管理员账号
+password	VARCHAR(64)	NOT NULL	加密后的密码
+3.3 基础 SQL 操作模板
+-- 用户插入
+INSERT INTO user(username,password,email,income_total,budget_food,budget_non_food) 
+VALUES (?,?,?,?,?,?);
+
+-- 用户查询
+SELECT * FROM user WHERE username = ?;
+
+-- 流水插入
+INSERT INTO transaction(user_id,trans_type,amount,category,trans_date,remark)
+VALUES (?,?,?,?,?,?);
+
+-- 流水查询（某用户所有记录）
+SELECT * FROM transaction WHERE user_id = ?;
+
+-- 月度支出分类统计
+SELECT category, SUM(amount) as total 
+FROM transaction 
+WHERE user_id = ? AND trans_type = '支出' AND trans_date BETWEEN ? AND ?
+GROUP BY category;
+
+-- 管理员登录验证
+SELECT * FROM admin WHERE admin_name = ?;
+四、已完成工作详情
+模块 	负责人	        完成内容
+数据库	王宋	         创建数据库及三张核心表，编写CRUD模板，完成本地部署
+前端	      史俊龙	  完成注册/登录、记账、流水列表、统计图表等页面，封装Axios请求
+后端	      张力文	 搭建Flask项目框架，配置数据库连接，开发中
+测试	    何蕴豪             	编写测试计划、测试用例，完成中期报告框架
+五、当前风险与应对
+风险	应对措施	负责人
+后端进度滞后	优先完成登录+记账核心接口	张力文
+联调时间不足	前端暂时使用mock数据独立测试	史俊龙
+测试介入晚	先设计接口测试用例，待接口完成后执行	何蕴豪
+六、下一步工作计划
+时间	任务	负责人
+5月16日–5月20日	完成后端用户登录/注册及记账核心接口	张力文
+5月21日–5月25日	前后端首次联调	史俊龙、张力文
+5月26日–5月30日	完成统计报表接口与图表对接	张力文、史俊龙
+5月26日–6月5日	执行功能测试、记录Bug	 何蕴豪
+
+附录 
+源代码仓库链接：https://github.com/zhliw574/-
