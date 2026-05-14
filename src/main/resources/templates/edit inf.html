@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>修改信息</title>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #fff; padding: 40px; border-radius: 10px; width: 400px; }
+        h2 { margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #1890ff; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+        .back { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>修改信息</h2>
+        <form th:action="@{/user/update}" method="post">
+            <input type="text" name="username" th:value="${user.username}" placeholder="用户名" required>
+            <input type="password" name="password" th:value="${user.password}" placeholder="密码" required>
+            <button type="submit">保存</button>
+        </form>
+        <div class="back"><a th:href="@{/user/home}">← 返回</a></div>
+    </div>
+</body>
+</html>
