@@ -17,6 +17,5 @@ public class Admin {
     @Column(nullable = false)
     private String adminPassword;
 
-    @Column(nullable = false)
     private String email;
 }
