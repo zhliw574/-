@@ -12,16 +12,14 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionId;
 
-    @Column(nullable = false)
     private Double amount;
 
-    @Column(nullable = false)
+    @Column(name = "create_time")
     private LocalDate date;
 
-    @Column(nullable = false)
     private String type;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 }
