@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>管理员 - [[${typeName}]]</title>
+  <style>
+    body { font-family: Arial; background: #f0f2f5; padding: 30px; }
+    table { width: 100%; background: #fff; border-collapse: collapse; margin-top:15px; }
+    th, td { padding: 12px; border-bottom: 1px solid #eee; text-align:center; }
+    th { background: #f8f9fa; }
+    .back { margin-bottom: 15px; }
+    .back a { color: #1890ff; }
+    .add-form { background:#fff; padding:15px; margin-bottom:15px; border-radius:8px; display:flex; gap:10px; }
+    .add-form input { padding:8px; border:1px solid #ddd; border-radius:4px; }
+    .add-form button { background:#52c41a; color:#fff; border:none; padding:8px 16px; border-radius:4px; }
+    .btn { padding:6px 10px; border:none; border-radius:4px; color:#fff; font-size:12px; }
+    .btn-del { background:#ff4d4f; }
+    .msg { color:green; margin-bottom:10px; }
+  </style>
+</head>
+<body>
+<div class="back"><a th:href="@{/admin/home}">← 返回管理员首页</a></div>
+<h2>[[${typeName}]] 全平台流水</h2>
+<div th:if="${success}" class="msg" th:text="${success}"></div>
+<div th:if="${error}" class="msg" style="color:red" th:text="${error}"></div>
+
+<div class="add-form">
+  <form th:action="@{/admin/transaction/add}" method="post" style="display:flex; gap:10px;">
+    <input type="hidden" name="type" th:value="${typeName}">
+    <input type="number" name="userId" placeholder="用户ID" required>
+    <input type="number" name="amount" placeholder="金额" step="0.01" required>
+    <input type="date" name="date" required>
+    <button type="submit">添加流水</button>
+  </form>
+</div>
+
+<table>
+  <thead>
+  <tr>
+    <th>流水ID</th>
+    <th>用户ID</th>
+    <th>用户名</th>
+    <th>金额</th>
+    <th>日期</th>
+    <th>类型</th>
+    <th>操作</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="tx: ${transactions}">
+    <td>[[${tx.transactionId}]]</td>
+    <td>[[${tx.user.userId}]]</td>
+    <td>[[${tx.user.username}]]</td>
+    <td>[[${tx.amount}]]</td>
+    <td>[[${tx.date}]]</td>
+    <td>[[${tx.type}]]</td>
+    <td>
+      <a class="btn btn-del" th:href="@{/admin/transaction/delete/{id}(id=${tx.transactionId})}" onclick="return confirm('确定删除？')">删除</a>
+    </td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>

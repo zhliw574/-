@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>个人信息</title>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #fff; padding: 40px; border-radius: 10px; width: 400px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { margin-bottom: 20px; }
+        .row { margin-bottom: 12px; }
+        .label { color: #666; }
+        .back { margin-top: 20px; }
+        .back a { color: #1890ff; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>个人信息</h2>
+    <div class="row"><span class="label">用户ID：</span><span th:text="${user.userId}"></span></div>
+    <div class="row"><span class="label">用户名：</span><span th:text="${user.username}"></span></div>
+    <div class="row"><span class="label">密码：</span><span th:text="${user.password}"></span></div>
+    <div class="row"><span class="label">邮箱：</span><span th:text="${user.email}"></span></div>
+    <div class="row"><span class="label">月度总预算：</span><span th:text="'¥' + ${user.monthlyBudget}"></span></div>
+    <div class="back">
+        <a th:href="@{/user/edit}">修改信息</a>
+        <br>
+        <a th:href="@{/user/home}">← 返回首页</a>
+    </div>
+</div>
+</body>
+</html>

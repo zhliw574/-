@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户 - 月度流水占比</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; padding: 30px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; }
+        .back { margin-bottom: 15px; }
+        .back a { color: #1890ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="back"><a th:href="@{/user/home}">← 返回用户首页</a></div>
+    <h2>我的本月流水占比</h2>
+    <canvas id="pieChart"></canvas>
+</div>
+
+<script th:inline="javascript">
+    // 从后端获取数据，用和管理端一样的写法，加判空避免报错
+    const map = {
+        餐饮: /*[[${map['餐饮'] ?: 0}]]*/ 0,
+        水电: /*[[${map['水电'] ?: 0}]]*/ 0,
+        交通: /*[[${map['交通'] ?: 0}]]*/ 0,
+        生活用品: /*[[${map['生活用品'] ?: 0}]]*/ 0,
+        工资: /*[[${map['工资'] ?: 0}]]*/ 0,
+        其他: /*[[${map['其他'] ?: 0}]]*/ 0
+    };
+
+    new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: {
+            labels: Object.keys(map),
+            datasets: [{
+                data: Object.values(map),
+                backgroundColor: ['#f56a00','#7262fd','#00a2ae','#f5c400','#1890ff','#999']
+            }]
+        }
+    });
+</script>
+</body>
+</html>

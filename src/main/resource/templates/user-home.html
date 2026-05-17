@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户首页</title>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .item { display: inline-block; width: 200px; padding: 15px; background: #f9f9f9; margin: 10px; border-radius: 6px; text-align: center; }
+        a { text-decoration: none; color: #333; }
+        .info { float: right; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="info">
+        欢迎你，[[${user.username}]]
+        | <a th:href="@{/user/info}">个人信息</a>
+        | <a th:href="@{/logout}">退出</a>
+    </div>
+    <h2>我的月度流水</h2>
+
+    <!-- 用 ['key'] 方式访问中文key，同时加 ?:0 判空 -->
+    <div class="item"><a th:href="@{/user/type/餐饮}">餐饮<br/>[[${typeMap['餐饮'] ?: 0}]] 元</a></div>
+    <div class="item"><a th:href="@{/user/type/水电}">水电<br/>[[${typeMap['水电'] ?: 0}]] 元</a></div>
+    <div class="item"><a th:href="@{/user/type/交通}">交通<br/>[[${typeMap['交通'] ?: 0}]] 元</a></div>
+    <div class="item"><a th:href="@{/user/type/生活用品}">生活用品<br/>[[${typeMap['生活用品'] ?: 0}]] 元</a></div>
+    <div class="item"><a th:href="@{/user/type/工资}">工资<br/>[[${typeMap['工资'] ?: 0}]] 元</a></div>
+    <div class="item"><a th:href="@{/user/type/其他}">其他<br/>[[${typeMap['其他'] ?: 0}]] 元</a></div>
+
+    <br/><br/>
+    <a th:href="@{/user/chart}">查看饼图统计</a>
+</div>
+</body>
+</html>
