@@ -4,13 +4,14 @@ import com.example.demo.entity.Transaction;
 import com.example.demo.entity.User;
 import com.example.demo.service.TransactionService;
 import com.example.demo.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,97 +19,110 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/user")
 public class UserController {
-    @Autowired
-    private TransactionService transactionService;
+
     @Autowired
     private UserService userService;
 
-    private User checkLogin(HttpSession session) {
+    @Autowired
+    private TransactionService transactionService;
+
+    private User getUser(HttpSession session) {
         return (User) session.getAttribute("user");
     }
 
     @GetMapping("/home")
-    public String home(HttpSession session, Model model) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        Map<String, Double> typeSum = transactionService.getUserCurrentMonthTransactions(user.getUserId())
-                .stream().collect(Collectors.groupingBy(Transaction::getType, Collectors.summingDouble(Transaction::getAmount)));
-        String[] types = {"餐饮", "水电", "交通", "生活用品", "工资", "其他"};
-        for (String t : types) model.addAttribute(t + "Sum", typeSum.getOrDefault(t, 0.0));
+    public String home(Model model, HttpSession session) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+
+        List<Transaction> list = transactionService.getUserCurrentMonthTransactions(user.getUserId());
+        Map<String, Double> typeMap = list.stream().collect(Collectors.groupingBy(Transaction::getType, Collectors.summingDouble(Transaction::getAmount)));
+
+        model.addAttribute("typeMap", typeMap);
         model.addAttribute("user", user);
         return "user-home";
     }
 
     @GetMapping("/info")
-    public String info(HttpSession session, Model model) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        model.addAttribute("user", userService.findById(user.getUserId()));
+    public String info(Model model, HttpSession session) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+        model.addAttribute("user", user);
         return "user-info";
     }
 
     @GetMapping("/edit")
-    public String editPage(HttpSession session, Model model) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
+    public String edit(Model model, HttpSession session) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
         model.addAttribute("user", user);
         return "user-edit";
     }
 
     @PostMapping("/update")
-    public String update(@RequestParam String username, @RequestParam String password,
-                         HttpSession session, RedirectAttributes ra) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        User existing = userService.findById(user.getUserId());
-        existing.setUsername(username);
-        existing.setPassword(password);
-        userService.updateUser(existing);
-        session.setAttribute("user", existing);
+    public String update(@RequestParam String username,
+                         @RequestParam String password,
+                         HttpSession session,
+                         RedirectAttributes ra,
+                         HttpServletRequest request) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+
+        User exist = userService.findById(user.getUserId());
+        exist.setUsername(username);
+        exist.setPassword(password);
+        userService.updateUser(exist);
+
+        session.setAttribute("user", exist);
         ra.addFlashAttribute("success", "修改成功");
-        return "redirect:/user/home";
+
+        return "redirect:" + request.getHeader("Referer");
     }
 
     @GetMapping("/type/{type}")
-    public String typeTransactions(@PathVariable String type, HttpSession session, Model model) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        model.addAttribute("transactions", transactionService.getUserTransactionsByType(user.getUserId(), type));
-        model.addAttribute("typeName", type);
+    public String type(@PathVariable String type, Model model, HttpSession session) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+
+        List<Transaction> transactions = transactionService.getUserTransactionsByType(user.getUserId(), type);
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("type", type);
         model.addAttribute("user", user);
-        return "type-detail";
+        return "user-type";
     }
 
     @GetMapping("/chart")
-    public String chart(HttpSession session, Model model) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        Map<String, Double> typeSum = transactionService.getUserCurrentMonthTransactions(user.getUserId())
-                .stream().collect(Collectors.groupingBy(Transaction::getType, Collectors.summingDouble(Transaction::getAmount)));
-        model.addAttribute("typeSum", typeSum);
+    public String chart(Model model, HttpSession session) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+
+        List<Transaction> list = transactionService.getUserCurrentMonthTransactions(user.getUserId());
+        Map<String, Double> map = list.stream().collect(Collectors.groupingBy(Transaction::getType, Collectors.summingDouble(Transaction::getAmount)));
+
+        model.addAttribute("map", map);
         model.addAttribute("user", user);
-        return "chart";
+        return "user-chart";
     }
+    @PostMapping("/transaction/add")
+    public String add(
+            @RequestParam String type,
+            @RequestParam Double amount,
+            @RequestParam String date,
+            HttpSession session,
+            RedirectAttributes ra,
+            HttpServletRequest request
+    ) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
 
-    private Transaction checkOwnership(Long txId, User user) {
-        Transaction tx = transactionService.findById(txId);
-        return (tx != null && tx.getUser().getUserId().equals(user.getUserId())) ? tx : null;
-    }
+        Transaction t = new Transaction();
+        t.setUser(user);
+        t.setType(type);
+        t.setAmount(amount);
+        t.setDate(java.time.LocalDate.parse(date));
 
-    @PostMapping("/transaction/update")
-    public String updateTx(@RequestParam Long transactionId, @RequestParam Double amount,
-                           @RequestParam String date, HttpSession session, RedirectAttributes ra) {
-        User user = checkLogin(session);
-        if (user == null) return "redirect:/";
-        Transaction tx = checkOwnership(transactionId, user);
-        if (tx != null) {
-            tx.setAmount(amount);
-            tx.setDate(LocalDate.parse(date));
-            transactionService.save(tx);
-            ra.addFlashAttribute("success", "修改成功");
-            return "redirect:/user/type/" + tx.getType();
-        }
-        ra.addFlashAttribute("error", "无权操作");
-        return "redirect:/user/home";
+        transactionService.save(t);
+        ra.addFlashAttribute("success", "添加成功！");
+        return "redirect:" + request.getHeader("Referer");
     }
 }
