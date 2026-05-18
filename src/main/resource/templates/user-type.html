@@ -4,46 +4,137 @@
     <meta charset="UTF-8">
     <title>流水明细</title>
     <style>
-        body { font-family: Arial; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background: #f5f5f5; }
-        .back { margin-bottom: 10px; }
-        a { color: #1890ff; text-decoration: none; }
-        input { padding: 6px; margin-right: 5px; }
-        button { padding: 6px 10px; cursor: pointer; }
+        body {font-family:Arial;background:#f5f7fa;padding:20px;}
+        .back {margin-bottom:15px;}
+        .back a {color:#007bff;text-decoration:none;}
+        .add-btn-container {margin:15px 0;}
+        table {width:100%;background:#fff;border-collapse:collapse;margin:15px 0;}
+        th,td {padding:10px;border:1px solid #eee;text-align:center;}
+        th {background:#f8f9fa;}
+        .btn {
+            padding:5px 12px;
+            border:none;
+            border-radius:4px;
+            color:#fff;
+            font-size:13px;
+            cursor:pointer;
+            text-decoration:none;
+            display:inline-block;
+            min-width:60px;
+            text-align:center;
+        }
+        .btn-del {background:#dc3545;}
+        .btn-edit {background:#007bff;margin-left:5px;}
+        .btn-add {background:#28a745;margin-bottom:10px;}
+
+        .msg {color:green;margin:10px 0;}
+        .err {color:red;}
+
+        .modal {
+            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:999;
+        }
+        .modal-content {
+            background:#fff;padding:20px;border-radius:8px;width:320px;
+        }
+        .modal-content input {
+            width:100%;margin:8px 0;padding:8px;border:1px solid #ddd;border-radius:4px;
+        }
+        .modal-btns {display:flex;gap:10px;margin-top:10px;}
+        .modal-btns button {flex:1;padding:8px;border:none;border-radius:4px;cursor:pointer;}
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="back"><a th:href="@{/user/home}">← 返回首页</a></div>
-    <h3>类型：[[${type}]]</h3>
+<div class="back"><a th:href="@{/user/home}">← 返回首页</a></div>
+<h2>[[${type}]] 流水</h2>
 
-    <form th:action="@{/user/transaction/add}" method="post">
-        <input type="hidden" name="type" th:value="${type}">
-        金额：<input type="number" name="amount" required>
-        日期：<input type="date" name="date" required>
-        <button type="submit">添加</button>
-    </form>
+<div th:if="${success}" class="msg" th:text="${success}"></div>
+<div th:if="${error}" class="msg err" th:text="${error}"></div>
 
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>金额</th>
-            <th>日期</th>
-            <th>操作</th>
-        </tr>
-        <tr th:each="tx : ${transactions}">
-            <!-- 这里全部改成 transactionId，就这一处！-->
-            <td th:text="${tx.transactionId}"></td>
-            <td th:text="${tx.amount}"></td>
-            <td th:text="${tx.date}"></td>
+<div class="add-btn-container">
+    <button class="btn btn-add" onclick="openAdd()">添加流水</button>
+</div>
+
+<table>
+    <thead>
+        <tr><th>ID</th><th>金额</th><th>日期</th><th>类型</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+        <tr th:each="t : ${transactions}">
+            <td th:text="${t.transactionId}"></td>
+            <td th:text="${t.amount}"></td>
+            <td th:text="${t.date}"></td>
+            <td th:text="${t.type}"></td>
             <td>
-                <button onclick="alert('暂未开放删除')">删除</button>
+                <a class="btn btn-del"
+                   th:href="@{/admin/transaction/delete/{id}(id=${t.transactionId})}"
+                   onclick="return confirm('确定删除？')">删除</a>
+
+
+                <button class="btn btn-edit"
+                        onclick="openEdit(this)"
+                        th:data-id="${t.transactionId}"
+                        th:data-amount="${t.amount}"
+                        th:data-date="${t.date}">修改</button>
             </td>
         </tr>
-    </table>
+    </tbody>
+</table>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>修改流水</h3>
+        <form th:action="@{/user/transaction/update}" method="post">
+            <input type="hidden" name="transactionId" id="eid">
+            <input type="number" name="amount" id="eamt" step="0.01" required placeholder="金额">
+            <input type="date" name="date" id="edate" required>
+            <div class="modal-btns">
+                <button type="submit" style="background:#007bff;color:#fff;">保存</button>
+                <button type="button" onclick="closeEdit()" style="background:#ccc;">取消</button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h3>添加[[${type}]]流水</h3>
+        <form th:action="@{/user/transaction/add}" method="post">
+            <input type="hidden" name="type" th:value="${type}">
+            <input type="number" name="amount" step="0.01" required placeholder="金额">
+            <input type="date" name="date" required>
+            <div class="modal-btns">
+                <button type="submit" style="background:#28a745;color:#fff;">添加</button>
+                <button type="button" onclick="closeAdd()" style="background:#ccc;">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEdit(btn){
+    document.getElementById('eid').value=btn.dataset.id;
+    document.getElementById('eamt').value=btn.dataset.amount;
+    document.getElementById('edate').value=btn.dataset.date;
+    document.getElementById('editModal').style.display='flex';
+}
+function closeEdit(){
+    document.getElementById('editModal').style.display='none';
+}
+
+function openAdd(){
+    document.getElementById('addModal').style.display='flex';
+}
+function closeAdd(){
+    document.getElementById('addModal').style.display='none';
+}
+
+window.onclick=function(e){
+    let editModal = document.getElementById('editModal');
+    let addModal = document.getElementById('addModal');
+    if(e.target===editModal) closeEdit();
+    if(e.target===addModal) closeAdd();
+}
+</script>
 </body>
 </html>
