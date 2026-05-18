@@ -21,6 +21,7 @@
     <div class="row"><span class="label">密码：</span><span th:text="${user.password}"></span></div>
     <div class="row"><span class="label">邮箱：</span><span th:text="${user.email}"></span></div>
     <div class="row"><span class="label">月度总预算：</span><span th:text="'¥' + ${user.monthlyBudget}"></span></div>
+    <div class="row"><span class="label">剩余预算：</span><span th:text="'¥' + ${remain}"></span></div>
     <div class="back">
         <a th:href="@{/user/edit}">修改信息</a>
         <br>
