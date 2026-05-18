@@ -55,10 +55,10 @@ public class AdminController {
         if (admin == null) return "redirect:/login";
 
         List<Transaction> transactions;
+
         if ("全部".equals(type)) {
             transactions = transactionService.getAllTransactions();
         }
-        // 否则按类型查询
         else if (userId != null) {
             transactions = transactionService.getUserTransactionsByType(userId, type);
         } else {
@@ -68,6 +68,8 @@ public class AdminController {
         model.addAttribute("transactions", transactions);
         model.addAttribute("type", type);
         model.addAttribute("admin", admin);
+        model.addAttribute("userId", userId);
+
         return "admin-type";
     }
 
@@ -82,34 +84,6 @@ public class AdminController {
         model.addAttribute("admin", admin);
         model.addAttribute("map", map);
         return "admin-chart";
-    }
-
-    @PostMapping("/transaction/add")
-    public String add(@RequestParam Long userId,
-                      @RequestParam String type,
-                      @RequestParam Double amount,
-                      @RequestParam String date,
-                      RedirectAttributes ra, HttpServletRequest request) {
-        User user = userService.findById(userId);
-        if (user == null) {
-            ra.addFlashAttribute("error", "用户不存在");
-            return "redirect:" + request.getHeader("Referer");
-        }
-
-        try {
-            Transaction t = new Transaction();
-            t.setUser(user);
-            t.setType(type);
-            t.setAmount(amount);
-            t.setDate(LocalDate.now());
-            transactionService.save(t);
-            ra.addFlashAttribute("success", "添加成功");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", "添加失败");
-            e.printStackTrace();
-        }
-
-        return "redirect:" + request.getHeader("Referer");
     }
 
     @GetMapping("/transaction/delete/{id}")
@@ -135,7 +109,7 @@ public class AdminController {
             return "redirect:" + request.getHeader("Referer");
         }
         t.setAmount(amount);
-        t.setDate(LocalDate.now());
+        t.setDate(LocalDate.parse(date));
         transactionService.save(t);
         ra.addFlashAttribute("success", "修改成功");
         return "redirect:" + request.getHeader("Referer");
