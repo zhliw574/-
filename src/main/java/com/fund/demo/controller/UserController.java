@@ -103,6 +103,7 @@ public class UserController {
         model.addAttribute("user", user);
         return "user-chart";
     }
+
     @PostMapping("/transaction/add")
     public String add(
             @RequestParam String type,
@@ -123,6 +124,45 @@ public class UserController {
 
         transactionService.save(t);
         ra.addFlashAttribute("success", "添加成功！");
+
+        return "redirect:" + request.getHeader("Referer");
+    }
+
+    @PostMapping("/transaction/update")
+    public String updateTransaction(
+            @RequestParam Long transactionId,
+            @RequestParam Double amount,
+            @RequestParam String date,
+            HttpSession session,
+            RedirectAttributes ra,
+            HttpServletRequest request
+    ) {
+        User user = getUser(session);
+        if (user == null) return "redirect:/login";
+
+        Transaction t = transactionService.findById(transactionId);
+        if (t == null || !t.getUser().getUserId().equals(user.getUserId())) {
+            ra.addFlashAttribute("error", "无权限或记录不存在");
+            return "redirect:" + request.getHeader("Referer");
+        }
+
+        t.setAmount(amount);
+        t.setDate(java.time.LocalDate.parse(date));
+        transactionService.save(t);
+
+        ra.addFlashAttribute("success", "修改成功！");
+        return "redirect:" + request.getHeader("Referer");
+    }
+
+    @GetMapping("/transaction/delete/{id}")
+    public String delete(@PathVariable Long id, RedirectAttributes ra, HttpServletRequest request) {
+        Transaction t = transactionService.findById(id);
+        if (t == null) {
+            ra.addFlashAttribute("error", "记录不存在");
+            return "redirect:" + request.getHeader("Referer");
+        }
+        transactionService.delete(id);
+        ra.addFlashAttribute("success", "删除成功！");
         return "redirect:" + request.getHeader("Referer");
     }
 }
