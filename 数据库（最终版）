@@ -1,0 +1,39 @@
+DROP DATABASE IF EXISTS fund_management;
+CREATE DATABASE fund_management DEFAULT CHARACTER SET utf8mb4;
+USE fund_management;
+
+CREATE TABLE users (
+  user_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '用户账号id',
+  username VARCHAR(32) NOT NULL UNIQUE COMMENT '用户名',
+  password VARCHAR(64) NOT NULL COMMENT '密码',
+  email VARCHAR(64) COMMENT '邮箱',
+  monthly_budget DECIMAL(10,2) DEFAULT 0 COMMENT '月度总预算'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户信息表';
+
+CREATE TABLE transaction (
+  trans_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '流水收支id',
+  user_id INT NOT NULL COMMENT '用户ID',
+  amount DECIMAL(10,2) NOT NULL COMMENT '金额',
+  trans_date DATE NOT NULL COMMENT '日期',
+  trans_type VARCHAR(20) NOT NULL COMMENT '交易类型',
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资金流水记录表';
+
+-- ==============================================
+-- 【完全按照Hibernate要求创建！！】
+-- 表名：admins
+-- 字段：admin_name、admin_password
+-- ==============================================
+CREATE TABLE admins (
+  admin_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '管理员账号id',
+  admin_name VARCHAR(32) NOT NULL UNIQUE COMMENT '管理员名',
+  admin_password VARCHAR(64) NOT NULL COMMENT '管理员密码',
+  email VARCHAR(64) COMMENT '邮箱'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员信息表';
+
+-- 插入账号
+INSERT INTO admins (admin_name, admin_password, email) 
+VALUES ('admin', '123456', 'admin@test.com');
+
+INSERT INTO users (username, password, email, monthly_budget) 
+VALUES ('user', '123456', 'user@test.com', 2000.00);
